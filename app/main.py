@@ -35,6 +35,13 @@ def ctx(request: Request, **extra):
     return data
 
 
+def render(request: Request, template_name: str, status_code: int = 200, **context):
+    """Рендер шаблона в формате, совместимом со Starlette >= 0.36
+    (new-style: name первым, request отдельным параметром)."""
+    return templates.TemplateResponse(request, template_name,
+                                      ctx(request, **context), status_code=status_code)
+
+
 # ==================== ГЛАВНАЯ / РЕГИСТРАЦИЯ / ВХОД ====================
 
 
@@ -43,7 +50,7 @@ def index(request: Request):
     with get_db() as db:
         items = db.execute(
             "SELECT * FROM equipment WHERE status='ok' ORDER BY type, size").fetchall()
-    return templates.TemplateResponse("index.html", ctx(request, items=[dict(i) for i in items]))
+    return render(request, "index.html", items=[dict(i) for i in items])
 
 
 @app.post("/register")
@@ -63,14 +70,13 @@ def register(request: Request, username: str = Form(...), password: str = Form(.
                     (username, hash_password(password), full_name, phone))
                 error = ""
     if error:
-        return templates.TemplateResponse("register.html",
-                                          ctx(request, error=error), status_code=400)
+        return render(request, "register.html", status_code=400, error=error)
     return RedirectResponse("/login?registered=1", status_code=302)
 
 
 @app.get("/register", response_class=HTMLResponse)
 def register_page(request: Request):
-    return templates.TemplateResponse("register.html", ctx(request, error=None))
+    return render(request, "register.html", error=None)
 
 
 @app.post("/login")
@@ -78,9 +84,8 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
     with get_db() as db:
         user = db.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
     if not user or not verify_password(password, user["password_hash"]):
-        return templates.TemplateResponse("login.html",
-                                          ctx(request, error="Неверный логин или пароль"),
-                                          status_code=401)
+        return render(request, "login.html", status_code=401,
+                      error="Неверный логин или пароль")
     token = create_session({"user_id": user["id"], "username": user["username"],
                             "role": user["role"], "full_name": user["full_name"]})
     resp = RedirectResponse(get_home_by_role(user["role"]), status_code=302)
@@ -91,7 +96,7 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, registered: int = 0):
     msg = "Регистрация успешна. Войдите в систему." if registered else None
-    return templates.TemplateResponse("login.html", ctx(request, error=None, success=msg))
+    return render(request, "login.html", error=None, success=msg)
 
 
 @app.get("/logout")
@@ -121,8 +126,7 @@ def cabinet(request: Request):
             "LEFT JOIN equipment e ON e.id=b.equipment_id "
             "WHERE b.user_id=? ORDER BY b.date DESC, b.start_time",
             (session["user_id"],)).fetchall()
-    return templates.TemplateResponse("cabinet.html",
-                                      ctx(request, bookings=[dict(r) for r in rows]))
+    return render(request, "cabinet.html", bookings=[dict(r) for r in rows])
 
 
 @app.post("/cabinet/book")
@@ -158,9 +162,7 @@ def book(request: Request, equipment_id: int = Form(...), booking_date: str = Fo
         with get_db() as db:
             items = [dict(i) for i in db.execute(
                 "SELECT * FROM equipment WHERE status='ok' ORDER BY type").fetchall()]
-        return templates.TemplateResponse("book.html",
-                                          ctx(request, items=items, error=error),
-                                          status_code=400)
+        return render(request, "book.html", status_code=400, items=items, error=error)
     return RedirectResponse("/cabinet?booked=1", status_code=302)
 
 
@@ -173,7 +175,7 @@ def book_page(request: Request):
     with get_db() as db:
         items = [dict(i) for i in db.execute(
             "SELECT * FROM equipment WHERE status='ok' ORDER BY type, size").fetchall()]
-    return templates.TemplateResponse("book.html", ctx(request, items=items, error=None))
+    return render(request, "book.html", items=items, error=None)
 
 
 @app.post("/cabinet/bookings/{booking_id}/change")
@@ -227,9 +229,8 @@ def edit_booking_page(booking_id: int, request: Request, error: int = 0):
             return RedirectResponse("/cabinet", status_code=302)
         items = [dict(i) for i in db.execute(
             "SELECT * FROM equipment WHERE status='ok' ORDER BY type, size").fetchall()]
-    return templates.TemplateResponse("edit_booking.html",
-                                      ctx(request, booking=dict(booking), items=items,
-                                          error="Не удалось изменить бронь: инвентарь занят или недоступен." if error else None))
+    return render(request, "edit_booking.html", booking=dict(booking), items=items,
+                  error="Не удалось изменить бронь: инвентарь занят или недоступен." if error else None)
 
 
 @app.post("/cabinet/bookings/{booking_id}/cancel")
@@ -260,8 +261,7 @@ def employee_panel(request: Request, day: str | None = None):
             "FROM bookings b JOIN users u ON u.id=b.user_id "
             "LEFT JOIN equipment e ON e.id=b.equipment_id "
             "WHERE b.date=? ORDER BY b.start_time", (day,)).fetchall()
-    return templates.TemplateResponse("employee.html",
-                                      ctx(request, day=day, bookings=[dict(r) for r in rows]))
+    return render(request, "employee.html", day=day, bookings=[dict(r) for r in rows])
 
 
 # ==================== ИНТЕРФЕЙС АДМИНИСТРАТОРА ====================
@@ -278,8 +278,7 @@ def admin_panel(request: Request):
             "SELECT id, username, full_name, phone, role FROM users ORDER BY id").fetchall()]
         equipment = [dict(r) for r in db.execute(
             "SELECT * FROM equipment ORDER BY id").fetchall()]
-    return templates.TemplateResponse("admin.html",
-                                      ctx(request, users=users, equipment=equipment))
+    return render(request, "admin.html", users=users, equipment=equipment)
 
 
 @app.exception_handler(403)
