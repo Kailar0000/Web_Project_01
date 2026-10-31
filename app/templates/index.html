@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Главная — Прокат лыж{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Прокат лыж и сноубордов</h1>
+  <p>Зарегистрируйтесь, забронируйте инвентарь и выберите удобное время проката.</p>
+  {% if not session %}
+    <a class="btn" href="/register">Создать аккаунт</a>
+    <a class="btn btn-outline" href="/login">Войти</a>
+  {% else %}
+    <a class="btn" href="/cabinet/book">Забронировать инвентарь</a>
+  {% endif %}
+</section>
+
+<h2>Доступный инвентарь</h2>
+<div class="grid">
+  {% for item in items %}
+  <div class="card">
+    <div class="card-title">{{ item.name }}</div>
+    <div class="card-sub">
+      Тип: {{ {'ski':'Лыжи','snowboard':'Сноуборд','boots':'Ботинки'}.get(item.type, item.type) }},
+      размер: {{ item.size or '—' }}
+    </div>
+    {% if session %}
+      <a class="btn btn-small" href="/cabinet/book?eq={{ item.id }}">Забронировать</a>
+    {% else %}
+      <a class="btn btn-small btn-outline" href="/login">Нужен вход</a>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
