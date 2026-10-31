@@ -2,11 +2,14 @@
 
 Хранит пользователей, инвентарь (лыжи) и бронирования.
 """
+import os
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
 
-DB_PATH = "skiprokat.db"
+# Абсолютный путь к БД — не зависит от текущей директории запуска
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "skiprokat.db")
 
 
 @contextmanager
