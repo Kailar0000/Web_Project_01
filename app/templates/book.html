@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Бронирование{% endblock %}
+{% block content %}
+<div class="form-card">
+  <h1>Бронирование инвентаря</h1>
+  {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+  <form method="post" action="/cabinet/book">
+    <label>Инвентарь
+      <select name="equipment_id" required>
+        {% for item in items %}
+        <option value="{{ item.id }}">{{ item.name }} (размер {{ item.size or '—' }})</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Дата проката<input type="date" name="booking_date" required></label>
+    <label>Время начала<input type="time" name="start_time" required value="10:00"></label>
+    <label>Длительность, часов
+      <select name="duration_hours">
+        {% for h in range(1, 9) %}<option value="{{ h }}">{{ h }}</option>{% endfor %}
+      </select>
+    </label>
+    <button class="btn" type="submit">Забронировать</button>
+  </form>
+</div>
+{% endblock %}

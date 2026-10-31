@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Личный кабинет{% endblock %}
+{% block content %}
+<h1>Личный кабинет</h1>
+<p><a class="btn" href="/cabinet/book">+ Забронировать инвентарь</a></p>
+
+{% if bookings %}
+<table>
+  <thead>
+    <tr><th>№</th><th>Инвентарь</th><th>Дата</th><th>Начало</th><th>Длительность</th><th>Статус</th><th>Действия</th></tr>
+  </thead>
+  <tbody>
+  {% for b in bookings %}
+    <tr>
+      <td>{{ b.id }}</td>
+      <td>{{ b.equipment_name or '—' }}</td>
+      <td>{{ b.date }}</td>
+      <td>{{ b.start_time }}</td>
+      <td>{{ b.duration_hours }} ч</td>
+      <td><span class="badge badge-{{ b.status }}">
+        {{ {'active':'Активна','done':'Завершена','cancelled':'Отменена'}.get(b.status, b.status) }}</span></td>
+      <td>
+        {% if b.status == 'active' %}
+          <a class="btn btn-small" href="/cabinet/edit/{{ b.id }}">Изменить время</a>
+          <form style="display:inline" method="post" action="/cabinet/bookings/{{ b.id }}/cancel">
+            <button class="btn btn-small btn-danger" type="submit">Отменить</button>
+          </form>
+        {% else %}—{% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="alert alert-ok">У вас пока нет бронирований. Забронируйте инвентарь!</div>
+{% endif %}
+{% endblock %}

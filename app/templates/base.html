@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Прокат лыж{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">⛷️ Прокат лыж</a>
+  <nav>
+    {% if session %}
+      <a href="{{ '/admin' if session.role == 'admin' else ('/employee' if session.role == 'employee' else '/cabinet') }}">
+        {{ 'Админ-панель' if session.role == 'admin' else ('Панель сотрудника' if session.role == 'employee' else 'Личный кабинет') }}
+      </a>
+      <span class="userchip">{{ session.username }} ({{ session.role }})</span>
+      <a href="/logout">Выйти</a>
+    {% else %}
+      <a href="/login">Вход</a>
+      <a href="/register" class="btn btn-small">Регистрация</a>
+    {% endif %}
+  </nav>
+</header>
+<main class="container">
+  {% block content %}{% endblock %}
+</main>
+<footer class="footer">© 2026 Пункт проката лыжного инвентаря</footer>
+</body>
+</html>
